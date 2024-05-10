@@ -1,0 +1,467 @@
+package Caclulator;
+
+import javax.swing.*;
+import java.awt.*;
+import java.math.BigDecimal;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Locale;
+
+public class Calculator {
+    private final JFrame frame;
+    private final JTextField textField;
+    private final JTextField recent;
+    final JButton[] numberButtons = new JButton[10];
+    private final JButton[] functionButtons = new JButton[9];
+    final JButton addButton, subButton, mulButton, divButton;
+    final JButton decButton, eqButton, delButton, clrButton, negButton;
+    private final JPanel panel;
+
+    final HelpMenu helpMenu = new HelpMenu();
+    private final JTextArea HelpText;
+
+    static final Locale locale = Locale.getDefault(Locale.Category.FORMAT);
+    static final NumberFormat NumberFormater = NumberFormat.getInstance(locale);
+    static final DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
+
+    static final Font myFont = new Font("Comic Sans MS", Font.BOLD, 25);
+
+    private static final ArrayList<String> equations = new ArrayList<String>();
+
+    private final ButtonListener buttonListener = new ButtonListener(this);
+    private final KeyboardListener keyboardListener = new KeyboardListener(this);
+
+    static final char PlusSymbol = '+', MinusSymbol = '-', NegativeSymbol = MinusSymbol, DivisionSymbol = '/',
+            MulSymbol = '*', EqualSymbol = '=', DecimalSeperator = dfs.getDecimalSeparator();
+
+    static final String ReadableDivSym = "÷", ReadableMulSym = "×";
+
+    public Calculator() {
+        frame = new JFrame("Caclulator");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(420, 560);
+        frame.getContentPane().setBackground(Color.BLACK);
+        frame.setResizable(false);
+        frame.setLayout(null);
+
+        recent = new JTextField();
+        recent.setBounds(50, 1, 300, 25);
+        recent.setFont(myFont.deriveFont(Font.PLAIN, 15));
+        recent.setEditable(false);
+        recent.setForeground(Color.WHITE);
+        recent.setBackground(null);
+        recent.setBorder(null);
+        recent.addKeyListener(keyboardListener);
+
+        textField = new JTextField();
+        textField.setBounds(50, 32, 300, 50);
+        textField.setFont(myFont);
+        textField.addKeyListener(keyboardListener);
+        textField.setEditable(false);
+
+        HelpText = new JTextArea("Press 'i' for help.");
+        HelpText.setBounds(50, 490, 150, 25);
+        HelpText.setFont(myFont.deriveFont(Font.PLAIN, 15));
+        HelpText.setEditable(false);
+        HelpText.setForeground(Color.WHITE);
+        HelpText.setBackground(null);
+        HelpText.setBorder(null);
+        HelpText.addKeyListener(keyboardListener);
+
+        functionButtons[0] = addButton = new JButton(String.valueOf(PlusSymbol));
+        functionButtons[1] = subButton = new JButton(String.valueOf(MinusSymbol));
+        functionButtons[2] = mulButton = new JButton(ReadableMulSym);
+        functionButtons[3] = divButton = new JButton(ReadableDivSym);
+        functionButtons[4] = decButton = new JButton(String.valueOf(DecimalSeperator));
+        functionButtons[5] = eqButton = new JButton(String.valueOf(EqualSymbol));
+        functionButtons[6] = delButton = new JButton("Del");
+        functionButtons[7] = clrButton = new JButton("Clear");
+        functionButtons[8] = negButton = new JButton("(" + NegativeSymbol + ")");
+
+        for (int i = 0; i < functionButtons.length; i++) {
+            functionButtons[i].addActionListener(buttonListener);
+            functionButtons[i].setFont(myFont);
+            functionButtons[i].setFocusable(false);
+            functionButtons[i].setBackground(Color.GRAY);
+            functionButtons[i].setForeground(Color.WHITE);
+        }
+
+        for (int i = 0; i < numberButtons.length; i++) {
+            numberButtons[i] = new JButton(String.valueOf(i));
+            numberButtons[i].addActionListener(buttonListener);
+            numberButtons[i].setFont(myFont);
+            numberButtons[i].setFocusable(false);
+            numberButtons[i].setBackground(Color.GRAY);
+            numberButtons[i].setForeground(Color.WHITE);
+        }
+
+        negButton.setBounds(50, 430, 100, 50);
+        delButton.setBounds(150, 430, 100, 50);
+        clrButton.setBounds(250, 430, 100, 50);
+
+        panel = new JPanel();
+        panel.setBounds(50, 100, 300, 300);
+        panel.setLayout(new GridLayout(4, 4, 10, 10));
+        panel.addKeyListener(keyboardListener);
+        panel.setBackground(null);
+
+        panel.add(numberButtons[1]);
+        panel.add(numberButtons[2]);
+        panel.add(numberButtons[3]);
+
+        panel.add(addButton);
+
+        panel.add(numberButtons[4]);
+        panel.add(numberButtons[5]);
+        panel.add(numberButtons[6]);
+
+        panel.add(subButton);
+
+        panel.add(numberButtons[7]);
+        panel.add(numberButtons[8]);
+        panel.add(numberButtons[9]);
+
+        panel.add(mulButton);
+        panel.add(decButton);
+
+        panel.add(numberButtons[0]);
+
+        panel.add(eqButton);
+        panel.add(divButton);
+
+        frame.add(textField);
+        frame.add(recent);
+        frame.add(panel);
+        frame.add(negButton);
+        frame.add(delButton);
+        frame.add(clrButton);
+        frame.add(HelpText);
+        frame.setVisible(true);
+        textField.requestFocusInWindow();
+    }
+
+    static final short MAX_NUMBER_LENGTH = 18;
+
+    void handleErr(String errorMessage) {
+        recent.setText(errorMessage);
+        textField.setText("");
+    }
+
+    private double getNumber() throws Exception {
+        return NumberFormater.parse(textField.getText()).doubleValue();
+    }
+
+    private String format(double number, int scale) {
+        return String.format(locale, "%,." + scale + "f", number);
+    }
+
+    private String format(double number) {
+        BigDecimal decimal = BigDecimal.valueOf(number);
+
+        int scale = decimal.scale();
+
+        if (scale == 1 && (number == (int) number))
+            scale = 0;
+
+        return format(number, scale);
+    }
+
+    void appendNumber(int number) {
+        if (equations.size() <= 1)
+            recent.setText("");
+
+        try {
+            if (textField.getText().length() > MAX_NUMBER_LENGTH)
+                return;
+
+            final String NewTxt = textField.getText() + number;
+            final double num = NumberFormater.parse(NewTxt).doubleValue();
+
+            final String[] split = NewTxt.split("\\" + DecimalSeperator);
+
+            final int scale = split.length == 2 ? split[1].length() : 0;
+
+            textField.setText(format(num, scale));
+        } catch (Exception e) {
+            handleErr("Error: Invalid number.");
+            e.printStackTrace();
+        }
+    }
+
+    private String equationToText() {
+        String txt = "";
+
+        for (String string : equations) {
+            try {
+                txt += format(Double.valueOf(string));
+            } catch (Exception e) {
+                if (string.equals(String.valueOf(MulSymbol)))
+                    txt += ReadableMulSym;
+                else if (string.equals(String.valueOf(DivisionSymbol)))
+                    txt += ReadableDivSym;
+                else
+                    txt += string;
+            }
+            txt += ' ';
+        }
+
+        return txt;
+    }
+
+    private void operate(char operation) {
+        if (!validate(operation))
+            return;
+
+        try {
+            if (!equations.isEmpty() && getNumber() == 0
+                    && equations.get(equations.size() - 1).equals(String.valueOf(DivisionSymbol))) {
+                handleErr("Math Error: division by zero.");
+                return;
+            }
+
+            equations.add(String.valueOf(getNumber()));
+            equations.add(String.valueOf(operation));
+
+            recent.setText(equationToText());
+            textField.setText("");
+        } catch (Exception e) {
+            handleErr("Error: Invalid number.");
+            System.err.println(e);
+        }
+    }
+
+    private boolean validate(char operation) {
+        if (textField.getText().isEmpty()) {
+            if (equations.isEmpty())
+                return false;
+
+            equations.set(equations.size() - 1, String.valueOf(operation));
+            recent.setText(equationToText());
+            return false;
+        }
+
+        return true;
+    }
+
+    void add() {
+        operate(PlusSymbol);
+    }
+
+    void subtract() {
+        operate(MinusSymbol);
+    }
+
+    void divide() {
+        operate(DivisionSymbol);
+    }
+
+    void multiply() {
+        operate(MulSymbol);
+    }
+
+    void negative() {
+        if (equations.size() <= 1)
+            recent.setText("");
+
+        final String text = textField.getText();
+
+        if (text.startsWith(String.valueOf(NegativeSymbol)))
+            textField.setText(text.substring(1, text.length()));
+        else
+            textField.setText(NegativeSymbol + text);
+    }
+
+    void decimal() {
+        if (equations.size() <= 1)
+            recent.setText("");
+
+        if (textField.getText().contains(String.valueOf(DecimalSeperator)))
+            return;
+
+        textField.setText(textField.getText() + DecimalSeperator);
+    }
+
+    void delete() {
+        String str = textField.getText();
+
+        if (str.isEmpty()) {
+            if (equations.size() < 2)
+                return;
+
+            try {
+                textField.setText(format(Double.parseDouble(equations.get(equations.size() - 2))));
+                equations.remove(equations.size() - 1);
+                equations.remove(equations.size() - 1);
+
+                recent.setText(equationToText());
+            } catch (Exception e) {
+                System.err.println(e);
+                equations.clear();
+                recent.setText("");
+            }
+
+            return;
+        } else if (equations.size() <= 1)
+            recent.setText("");
+
+        try {
+            str = str.substring(0, str.length() - 1);
+            if (!str.isEmpty()) {
+                try {
+                    double num = NumberFormater.parse(str).doubleValue();
+                    String[] split = str.split("\\" + DecimalSeperator);
+
+                    int scale = split.length == 2 ? split[1].length() : 0;
+
+                    textField.setText(format(num, scale));
+                } catch (Exception e) {
+                    textField.setText(str);
+                }
+            } else
+                textField.setText("");
+        } catch (Exception e) {
+            handleErr("Error: Invalid number.");
+            System.err.println(e);
+        }
+    }
+
+    void clear() {
+        equations.clear();
+        recent.setText("");
+        textField.setText("");
+    }
+
+    void equal() {
+        if (equations.size() <= 1) {
+            if (!recent.getText().endsWith(String.valueOf(EqualSymbol)) && !recent.getText().isEmpty()) {
+                try {
+                    textField.setText(format(NumberFormater.parse(equations.get(0)).doubleValue()));
+                    recent.setText(recent.getText() + " " + EqualSymbol);
+                } catch (Exception e) {
+                    handleErr("Error: Invalid number.");
+                    System.err.println(e.getMessage());
+                }
+            }
+
+            equations.clear();
+
+            return;
+        }
+
+        int index = equations.indexOf(String.valueOf(DivisionSymbol));
+
+        double num1 = 0;
+        double num2 = 0;
+        double result = 0;
+
+        if (index >= 0 || (index = equations.indexOf(String.valueOf(MulSymbol))) >= 0) {
+            char operation = equations.get(index).charAt(0);
+
+            double[] nums = findNumbers(index, num1, num2);
+
+            if (nums.length < 2)
+                return;
+
+            num1 = nums[0];
+            num2 = nums[1];
+
+            switch (operation) {
+                case '/':
+                    if (num2 == 0) {
+                        handleErr("Math Error: division by zero.");
+                        return;
+                    }
+                    result = num1 / num2;
+                    break;
+                case '*':
+                    result = num1 * num2;
+                    break;
+            }
+        } else if ((index = equations.indexOf(String.valueOf(PlusSymbol))) > 0) {
+            double[] nums = findNumbers(index, num1, num2);
+
+            if (nums.length < 2)
+                return;
+
+            num1 = nums[0];
+            num2 = nums[1];
+
+            result = num1 + num2;
+        } else if ((index = equations.indexOf(String.valueOf(MinusSymbol))) > 0) {
+            double[] nums = findNumbers(index, num1, num2);
+
+            if (nums.length < 2)
+                return;
+
+            num1 = nums[0];
+            num2 = nums[1];
+
+            result = num1 - num2;
+        }
+
+        equations.remove(index);
+        equations.set(index - 1, String.valueOf(result));
+
+        try {
+            Double.parseDouble(equations.get(equations.size() - 1));
+        } catch (Exception e) {
+            try {
+                getNumber();
+            } catch (Exception err) {
+                try {
+                    textField.setText(format(NumberFormater.parse(equations.get(0)).doubleValue()));
+
+                    recent.setText(recent.getText().substring(0, recent.getText().length() - 3));
+
+                    equations.clear();
+
+                    if (!recent.getText().endsWith(String.valueOf(EqualSymbol)) && !recent.getText().isEmpty())
+                        recent.setText(recent.getText() + " " + String.valueOf(EqualSymbol));
+                } catch (Exception error) {
+                    handleErr("Error: Invalid number.");
+                    System.err.println(e.getMessage());
+                }
+                return;
+            }
+        }
+
+        equal();
+    }
+
+    private double[] findNumbers(int index, double num1, double num2) {
+        num1 = Double.parseDouble(equations.get(index - 1));
+        try {
+            num2 = Double.parseDouble(equations.get(index + 1));
+            equations.remove(index + 1);
+        } catch (Exception e) {
+            try {
+                num2 = getNumber();
+                recent.setText(recent.getText() + format(num2));
+            } catch (Exception err) {
+                try {
+                    textField.setText(format(NumberFormater.parse(equations.get(0)).doubleValue()));
+                    recent.setText("");
+                    equations.clear();
+                } catch (Exception error) {
+                    System.err.println(error);
+                }
+
+                return new double[0];
+            }
+        }
+
+        double[] numbers = { num1, num2 };
+
+        return numbers;
+    }
+
+    /**
+     * Closes the program.
+     */
+    public void close() {
+        helpMenu.dispose();
+        frame.dispose();
+        System.exit(0);
+    }
+}
