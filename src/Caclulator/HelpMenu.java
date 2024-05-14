@@ -11,10 +11,13 @@ import javax.swing.JTextArea;
 class HelpMenu extends JFrame implements KeyListener {
     private final Font myFont = Calculator.myFont.deriveFont(Font.PLAIN, 15);
 
-    HelpMenu() {
+    Calculator calculator;
+
+    HelpMenu(Calculator calculator) {
+        this.calculator = calculator;
         setTitle("Help Menu");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(500, 500);
+        setBounds(calculator.frame.getX(), calculator.frame.getY(),500, 500);
         getContentPane().setBackground(Color.BLACK);
         setResizable(false);
         setLayout(null);
@@ -52,8 +55,10 @@ class HelpMenu extends JFrame implements KeyListener {
     }
 
     void open() {
+        setBounds(calculator.frame.getX(), calculator.frame.getY(),500, 500);
+        setExtendedState(JFrame.NORMAL);
         setVisible(true);
-        requestFocusInWindow();
+        requestFocus();
     }
 
     @Override

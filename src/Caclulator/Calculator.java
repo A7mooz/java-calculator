@@ -2,14 +2,13 @@ package Caclulator;
 
 import javax.swing.*;
 import java.awt.*;
-import java.math.BigDecimal;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
 public class Calculator {
-    private final JFrame frame;
+    final JFrame frame;
     private final JTextField textField;
     private final JTextField recent;
     final JButton[] numberButtons = new JButton[10];
@@ -18,14 +17,14 @@ public class Calculator {
     final JButton decButton, eqButton, delButton, clrButton, negButton;
     private final JPanel panel;
 
-    final HelpMenu helpMenu = new HelpMenu();
+    final HelpMenu helpMenu;
     private final JTextArea HelpText;
 
     static final Locale locale = Locale.getDefault(Locale.Category.FORMAT);
     static final NumberFormat NumberFormater = NumberFormat.getInstance(locale);
     static final DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
 
-    static final Font myFont = new Font("Comic Sans MS", Font.BOLD, 25);
+    static final Font myFont = new Font("Arial", Font.BOLD, 25);
 
     private static final ArrayList<String> equations = new ArrayList<String>();
 
@@ -37,6 +36,8 @@ public class Calculator {
 
     static final String ReadableDivSym = "÷", ReadableMulSym = "×";
 
+    private boolean Errored = false;
+
     public Calculator() {
         frame = new JFrame("Caclulator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -47,11 +48,13 @@ public class Calculator {
 
         recent = new JTextField();
         recent.setBounds(50, 1, 300, 25);
-        recent.setFont(myFont.deriveFont(Font.PLAIN, 15));
+        recent.setFont(myFont.deriveFont(Font.PLAIN, 17));
         recent.setEditable(false);
+        recent.setCursor(null);
         recent.setForeground(Color.WHITE);
         recent.setBackground(null);
         recent.setBorder(null);
+        recent.setCaretColor(Color.black);
         recent.addKeyListener(keyboardListener);
 
         textField = new JTextField();
@@ -59,6 +62,8 @@ public class Calculator {
         textField.setFont(myFont);
         textField.addKeyListener(keyboardListener);
         textField.setEditable(false);
+        textField.setCaretColor(Color.WHITE);
+        textField.setActionMap(null);
 
         HelpText = new JTextArea("Press 'i' for help.");
         HelpText.setBounds(50, 490, 150, 25);
@@ -82,6 +87,7 @@ public class Calculator {
         for (int i = 0; i < functionButtons.length; i++) {
             functionButtons[i].addActionListener(buttonListener);
             functionButtons[i].setFont(myFont);
+            functionButtons[i].setBorder(BorderFactory.createLineBorder(Color.black));
             functionButtons[i].setFocusable(false);
             functionButtons[i].setBackground(Color.GRAY);
             functionButtons[i].setForeground(Color.WHITE);
@@ -91,6 +97,7 @@ public class Calculator {
             numberButtons[i] = new JButton(String.valueOf(i));
             numberButtons[i].addActionListener(buttonListener);
             numberButtons[i].setFont(myFont);
+            numberButtons[i].setBorder(null);
             numberButtons[i].setFocusable(false);
             numberButtons[i].setBackground(Color.GRAY);
             numberButtons[i].setForeground(Color.WHITE);
@@ -105,6 +112,8 @@ public class Calculator {
         panel.setLayout(new GridLayout(4, 4, 10, 10));
         panel.addKeyListener(keyboardListener);
         panel.setBackground(null);
+
+        helpMenu = new HelpMenu(this);
 
         panel.add(numberButtons[1]);
         panel.add(numberButtons[2]);
@@ -141,9 +150,14 @@ public class Calculator {
         textField.requestFocusInWindow();
     }
 
-    static final short MAX_NUMBER_LENGTH = 18;
+    static final short MAX_TEXT_LENGTH = 18;
+
+    static final long MAX_NUMBER = (long)Math.pow(10, MAX_TEXT_LENGTH - 2);
+
+    static final short MAX_DECIMAL_DIGITS = 15;
 
     void handleErr(String errorMessage) {
+        Errored = true;
         recent.setText(errorMessage);
         textField.setText("");
     }
@@ -153,26 +167,40 @@ public class Calculator {
     }
 
     private String format(double number, int scale) {
-        return String.format(locale, "%,." + scale + "f", number);
+        if (scale >= MAX_DECIMAL_DIGITS)
+            scale = MAX_DECIMAL_DIGITS;
+
+        if (number > MAX_NUMBER) return NumberFormater.format(number);
+
+        return String.format(locale, "%,." + scale + "f", number).toString();
     }
 
     private String format(double number) {
-        BigDecimal decimal = BigDecimal.valueOf(number);
+        int scale = 0;
 
-        int scale = decimal.scale();
+        String str = String.valueOf(number);
+        final String[] split = str.split("\\" + DecimalSeperator);
+        scale = split.length == 2 ? split[1].length() : 0;
 
-        if (scale == 1 && (number == (int) number))
-            scale = 0;
+        if (Double.parseDouble(String.format("%.0f", number)) ==  number) scale = 0;
 
         return format(number, scale);
     }
 
     void appendNumber(int number) {
-        if (equations.size() <= 1)
-            recent.setText("");
+        if (Errored) {
+            if (equations.size() <= 1)
+                recent.setText("");
+            else {
+                recent.setText(equationToText());
+            }
+
+            Errored = false;
+        }
 
         try {
-            if (textField.getText().length() > MAX_NUMBER_LENGTH)
+            textField.setCaretPosition(textField.getText().length());
+            if (textField.getText().length() > MAX_TEXT_LENGTH)
                 return;
 
             final String NewTxt = textField.getText() + number;
@@ -181,6 +209,8 @@ public class Calculator {
             final String[] split = NewTxt.split("\\" + DecimalSeperator);
 
             final int scale = split.length == 2 ? split[1].length() : 0;
+
+            if (scale >= MAX_DECIMAL_DIGITS) return;
 
             textField.setText(format(num, scale));
         } catch (Exception e) {
@@ -194,7 +224,7 @@ public class Calculator {
 
         for (String string : equations) {
             try {
-                txt += format(Double.valueOf(string));
+                txt += format(Double.parseDouble(string));
             } catch (Exception e) {
                 if (string.equals(String.valueOf(MulSymbol)))
                     txt += ReadableMulSym;
@@ -227,7 +257,7 @@ public class Calculator {
             textField.setText("");
         } catch (Exception e) {
             handleErr("Error: Invalid number.");
-            System.err.println(e);
+            e.printStackTrace();
         }
     }
 
@@ -261,8 +291,15 @@ public class Calculator {
     }
 
     void negative() {
-        if (equations.size() <= 1)
-            recent.setText("");
+        if (Errored) {
+            if (equations.size() <= 1)
+                recent.setText("");
+            else {
+                recent.setText(equationToText());
+            }
+
+            Errored = false;
+        }
 
         final String text = textField.getText();
 
@@ -273,8 +310,18 @@ public class Calculator {
     }
 
     void decimal() {
-        if (equations.size() <= 1)
-            recent.setText("");
+        if (textField.getText().length() >= MAX_TEXT_LENGTH)
+            return;
+
+        if (Errored) {
+            if (equations.size() <= 1)
+                recent.setText("");
+            else {
+                recent.setText(equationToText());
+            }
+
+            Errored = false;
+        }
 
         if (textField.getText().contains(String.valueOf(DecimalSeperator)))
             return;
@@ -296,13 +343,15 @@ public class Calculator {
 
                 recent.setText(equationToText());
             } catch (Exception e) {
-                System.err.println(e);
+                e.printStackTrace();
                 equations.clear();
                 recent.setText("");
             }
 
             return;
-        } else if (equations.size() <= 1)
+        }
+
+        if (equations.size() <= 1)
             recent.setText("");
 
         try {
@@ -322,7 +371,7 @@ public class Calculator {
                 textField.setText("");
         } catch (Exception e) {
             handleErr("Error: Invalid number.");
-            System.err.println(e);
+            e.printStackTrace();
         }
     }
 
@@ -334,13 +383,14 @@ public class Calculator {
 
     void equal() {
         if (equations.size() <= 1) {
-            if (!recent.getText().endsWith(String.valueOf(EqualSymbol)) && !recent.getText().isEmpty()) {
+            if (!recent.getText().isEmpty() && !recent.getText().endsWith(String.valueOf(EqualSymbol))) {
                 try {
-                    textField.setText(format(NumberFormater.parse(equations.get(0)).doubleValue()));
+                    textField.setText(format(Double.parseDouble(equations.get(0))));
+                    textField.setCaretPosition(0);
                     recent.setText(recent.getText() + " " + EqualSymbol);
                 } catch (Exception e) {
                     handleErr("Error: Invalid number.");
-                    System.err.println(e.getMessage());
+                    e.printStackTrace();
                 }
             }
 
@@ -403,29 +453,6 @@ public class Calculator {
         equations.remove(index);
         equations.set(index - 1, String.valueOf(result));
 
-        try {
-            Double.parseDouble(equations.get(equations.size() - 1));
-        } catch (Exception e) {
-            try {
-                getNumber();
-            } catch (Exception err) {
-                try {
-                    textField.setText(format(NumberFormater.parse(equations.get(0)).doubleValue()));
-
-                    recent.setText(recent.getText().substring(0, recent.getText().length() - 3));
-
-                    equations.clear();
-
-                    if (!recent.getText().endsWith(String.valueOf(EqualSymbol)) && !recent.getText().isEmpty())
-                        recent.setText(recent.getText() + " " + String.valueOf(EqualSymbol));
-                } catch (Exception error) {
-                    handleErr("Error: Invalid number.");
-                    System.err.println(e.getMessage());
-                }
-                return;
-            }
-        }
-
         equal();
     }
 
@@ -440,11 +467,12 @@ public class Calculator {
                 recent.setText(recent.getText() + format(num2));
             } catch (Exception err) {
                 try {
-                    textField.setText(format(NumberFormater.parse(equations.get(0)).doubleValue()));
+                    textField.setText(format(Double.parseDouble(equations.get(0))));
+                    textField.setCaretPosition(0);
                     recent.setText("");
                     equations.clear();
                 } catch (Exception error) {
-                    System.err.println(error);
+                    error.printStackTrace();
                 }
 
                 return new double[0];
