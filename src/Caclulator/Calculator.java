@@ -2,6 +2,7 @@ package Caclulator;
 
 import javax.swing.*;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class Calculator extends CalculatorConsts {
@@ -164,13 +165,10 @@ public class Calculator extends CalculatorConsts {
     }
 
     private String format(double number) {
-        int scale = 0;
+        BigDecimal bigDecimal = BigDecimal.valueOf(number);
+        int scale = bigDecimal.scale();
 
-        String str = String.valueOf(number);
-        final String[] split = str.split("\\" + DecimalSeperator);
-        scale = split.length == 2 ? split[1].length() : 0;
-
-        if (Double.parseDouble(String.format("%.0f", number)) ==  number) scale = 0;
+        if (bigDecimal.longValue() ==  number) scale = 0;
 
         return format(number, scale);
     }
@@ -373,6 +371,7 @@ public class Calculator extends CalculatorConsts {
         if (equations.size() <= 1) {
             if (!recent.getText().isEmpty() && !recent.getText().endsWith(String.valueOf(EqualSymbol))) {
                 try {
+                    System.out.println(equations);
                     textField.setText(format(Double.parseDouble(equations.get(0))));
                     textField.setCaretPosition(0);
                     recent.setText(recent.getText() + " " + EqualSymbol);
@@ -457,8 +456,16 @@ public class Calculator extends CalculatorConsts {
                 try {
                     textField.setText(format(Double.parseDouble(equations.get(0))));
                     textField.setCaretPosition(0);
-                    recent.setText("");
-                    equations.clear();
+                    recent.setText(recent.getText().substring(0, recent.getText().length()-3));
+
+                    if (recent.getText().length() == textField.getText().length()) {
+                        textField.setText("");
+                        recent.setText(format(Double.parseDouble(equations.get(0))) + " " + equations.get(index) + " ");
+                        return new double[0];
+                    }
+                    
+                    equations.subList(1, equations.size()).clear();
+                    equal();
                 } catch (Exception error) {
                     error.printStackTrace();
                 }
