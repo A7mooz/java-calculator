@@ -2,12 +2,9 @@ package Caclulator;
 
 import javax.swing.*;
 import java.awt.*;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 
-public class Calculator {
+public class Calculator extends CalculatorConsts {
     final JFrame frame;
     private final JTextField textField;
     private final JTextField recent;
@@ -20,21 +17,12 @@ public class Calculator {
     final HelpMenu helpMenu;
     private final JTextArea HelpText;
 
-    static final Locale locale = Locale.getDefault(Locale.Category.FORMAT);
-    static final NumberFormat NumberFormater = NumberFormat.getInstance(locale);
-    static final DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
-
     static final Font myFont = new Font("Arial", Font.BOLD, 25);
 
     private static final ArrayList<String> equations = new ArrayList<String>();
 
     private final ButtonListener buttonListener = new ButtonListener(this);
     private final KeyboardListener keyboardListener = new KeyboardListener(this);
-
-    static final char PlusSymbol = '+', MinusSymbol = '-', NegativeSymbol = MinusSymbol, DivisionSymbol = '/',
-            MulSymbol = '*', EqualSymbol = '=', DecimalSeperator = dfs.getDecimalSeparator();
-
-    static final String ReadableDivSym = "÷", ReadableMulSym = "×";
 
     private boolean Errored = false;
 
