@@ -41,7 +41,7 @@ class HelpMenu extends JFrame implements KeyListener {
         txt += "\n- Pressing ',' or '.' will add decimal seperator depending on your\nlocale settings. (Currently set to '"
                 + Calculator.DecimalSeperator + "')";
         txt += "\n- Pressing 'DEL' or 'BACKSPACE' will delete the last thing you wrote\nor edit the recent number above.";
-        txt += "\n- Pressing UPPERCASE 'C' will clear everything.";
+        txt += "\n- Pressing `SHIFT` along with 'c' will clear everything.";
         txt += "\n- Pressing 'n' will make the current number negative.";
         txt += "\n- Pressing 'ESC' will close this window or if it's not open it'll exit\nthe program.";
         txt += "\n- Pressing 'i' will show this.";

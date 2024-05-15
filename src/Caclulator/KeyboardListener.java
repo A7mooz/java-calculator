@@ -11,7 +11,7 @@ class KeyboardListener implements KeyListener {
     }
 
     @Override
-    public void keyPressed(KeyEvent e) {
+    public void keyPressed(KeyEvent e) {        
         switch (e.getKeyChar()) {
             case Calculator.PlusSymbol:
                 calculator.add();
@@ -38,17 +38,24 @@ class KeyboardListener implements KeyListener {
                 calculator.delete();
                 break;
             case 'C':
-                calculator.clear();
+            case 'c':
+                if (e.isShiftDown())
+                    calculator.clear();
                 break;
+            case 'N':
+                if (e.isShiftDown()) break;
             case 'n':
                 calculator.negative();
                 break;
+            case 'I':
+            case 'İ':
+                if (e.isShiftDown()) break;
             case 'i':
             case 'ı':
                 calculator.helpMenu.open();
                 break;
             default:
-                if (e.getKeyChar() >= '0' && e.getKeyChar() <= '9')
+                if (e.getKeyChar() >= KeyEvent.VK_0 && e.getKeyChar() <= KeyEvent.VK_9)
                     calculator.appendNumber(Integer.parseInt(String.valueOf(e.getKeyChar())));
         }
     }
