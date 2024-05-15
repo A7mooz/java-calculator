@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 
-public class ButtonListener implements ActionListener {
+class ButtonListener implements ActionListener {
     private final Calculator calculator;
     ButtonListener(Calculator calculator) {
         this.calculator = calculator;
