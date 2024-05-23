@@ -20,7 +20,7 @@ public class Calculator extends CalculatorConsts {
 
     static final Font myFont = new Font("Arial", Font.BOLD, 25);
 
-    private static final ArrayList<String> equations = new ArrayList<String>();
+    private final ArrayList<String> equations = new ArrayList<String>();
 
     private final ButtonListener buttonListener = new ButtonListener(this);
     private final KeyboardListener keyboardListener = new KeyboardListener(this);
@@ -371,7 +371,6 @@ public class Calculator extends CalculatorConsts {
         if (equations.size() <= 1) {
             if (!recent.getText().isEmpty() && !recent.getText().endsWith(String.valueOf(EqualSymbol))) {
                 try {
-                    System.out.println(equations);
                     textField.setText(format(Double.parseDouble(equations.get(0))));
                     textField.setCaretPosition(0);
                     recent.setText(recent.getText() + " " + EqualSymbol);
