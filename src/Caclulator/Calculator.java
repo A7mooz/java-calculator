@@ -6,25 +6,38 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class Calculator extends CalculatorConsts {
+    /** The main frame */
     final JFrame frame;
+    /** Text field for the currently typed number */
     private final JTextField textField;
+    /** Text field to show the recent operations */
     private final JTextField recent;
+    /** Number buttons */
     final JButton[] numberButtons = new JButton[10];
+    /** Functionality buttons */
     private final JButton[] functionButtons = new JButton[9];
     final JButton addButton, subButton, mulButton, divButton;
     final JButton decButton, eqButton, delButton, clrButton, negButton;
+    /** Panel for the buttons */
     private final JPanel panel;
 
+    /** Help frame menu */
     final HelpMenu helpMenu;
+    /** Text area for the text on how to show the help menu */
     private final JTextArea HelpText;
 
+    /** Font to use throughout the program */
     static final Font myFont = new Font("Arial", Font.BOLD, 25);
 
+    /** Array list of operations so we can store them somewhare */
     private final ArrayList<String> equations = new ArrayList<String>();
 
+    /** An action listener for the clicked buttons */
     private final ButtonListener buttonListener = new ButtonListener(this);
+    /** A key listener for the keyboard */
     private final KeyboardListener keyboardListener = new KeyboardListener(this);
 
+    /** Whether an error has been displayed or not */
     private boolean Errored = false;
 
     public Calculator() {
